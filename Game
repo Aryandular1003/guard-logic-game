@@ -1,0 +1,163 @@
+#include<bits/stdc++.h>
+using namespace std;
+
+// Enum for door types
+enum class DoorType {
+    SAFE_EXIT,
+    TRAP,
+    BACK_TO_START
+};
+
+class Game {
+private:
+    int maxAttempts;
+    int attempts;
+    vector<DoorType> doors;
+    mt19937 rng;
+
+public:
+    // Constructor
+    Game(int maxAtt = 3) {
+        maxAttempts = maxAtt;
+        attempts = maxAttempts;
+
+        random_device rd;
+        rng = mt19937(rd());
+    }
+
+    // Reset attempts
+    void resetGame() {
+        attempts = maxAttempts;
+    }
+
+    // Convert enum to string
+    string getDoorName(DoorType d) {
+        switch (d) {
+            case DoorType::SAFE_EXIT: return "Safe Exit";
+            case DoorType::TRAP: return "Trap";
+            case DoorType::BACK_TO_START: return "Back to Start";
+        }
+        return "Unknown";
+    }
+
+    // Shuffle doors randomly
+    void shuffleDoors() {
+        doors = {
+            DoorType::SAFE_EXIT,
+            DoorType::TRAP,
+            DoorType::BACK_TO_START
+        };
+        shuffle(doors.begin(), doors.end(), rng);
+    }
+
+    // Guard logic (random)
+    bool isGuardActive() {
+        uniform_int_distribution<int> dist(0, 1);
+        return dist(rng);
+    }
+
+    // Input validation
+    int getUserChoice() {
+        int choice;
+        while (true) {
+            cout << "Choose a door (1/2/3): ";
+            cin >> choice;
+
+            if (cin.fail() || choice < 1 || choice > 3) {
+                cin.clear();
+                cin.ignore(1000, '\n');
+                cout << " Invalid input. Try again.\n";
+            } else {
+                return choice;
+            }
+        }
+    }
+
+    // Restart / Exit option
+    bool askRestart() {
+        int option;
+        cout << "\nWhat do you want to do?\n";
+        cout << "1. Restart Game \n";
+        cout << "2. Exit \n";
+
+        while (true) {
+            cout << "Enter choice (1/2): ";
+            cin >> option;
+
+            if (cin.fail() || (option != 1 && option != 2)) {
+                cin.clear();
+                cin.ignore(1000, '\n');
+                cout << " Invalid choice. Try again.\n";
+            } else {
+                return option == 1;
+            }
+        }
+    }
+
+    // Main game logic
+    void play() {
+        
+        cout << " ============Guard Logic Game===========\n";
+       
+
+        while (true) {
+            resetGame();  // ensures attempts reset to 3 every new game
+
+            while (attempts > 0) {
+                shuffleDoors();
+
+                cout << "\nAttempts left: " << attempts << endl;
+
+                int choice = getUserChoice();
+
+                bool guard = isGuardActive();
+                cout << "Guard Active: " << (guard ? "YES " : "NO") << endl;
+
+                DoorType result;
+
+                if (guard) {
+                    result = DoorType::BACK_TO_START;
+                } else {
+                    result = doors[choice - 1];
+                }
+
+                cout << "Result: " << getDoorName(result) << endl;
+
+                // Win condition
+                if (result == DoorType::SAFE_EXIT) {
+                    cout << "\n You Escaped! YOU WIN!\n";
+
+                    if (askRestart()) break;  // restart → outer loop
+                    else return;
+                }
+
+                // Trap condition
+                if (result == DoorType::TRAP) {
+                    cout << "\n You hit a TRAP! GAME OVER!\n";
+
+                    if (askRestart()) break;  // restart → outer loop
+                    else return;
+                }
+
+                // Back to start
+                cout << " Back to start...\n";
+                attempts--;
+            }
+
+            // Attempts finished
+            if (attempts == 0) {
+                cout << "\n No attempts left. GAME OVER!\n";
+
+                if (!askRestart()) return;
+                // else → loop continues → resetGame() will run
+            }
+        }
+    }
+};
+
+// Main function
+int main() {
+    Game game(3);
+    game.play();
+    return 0;
+}
